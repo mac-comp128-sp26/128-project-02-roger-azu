@@ -6,7 +6,7 @@ import java.io.IOException;
 public class CSVReader {
 
     public static void main(String[] args) {
-        String path = "/Users/azu_v22/Desktop/greenhouse-gas-emissions.csv";
+        String path = "/Users/azu_v22/Desktop/greenhouse-gas-emissions.csv"; // need to update data in res folder
         String line = "";
 
         try {

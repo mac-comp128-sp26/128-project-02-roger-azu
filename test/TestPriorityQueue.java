@@ -35,7 +35,7 @@ public class TestPriorityQueue {
         assertEquals(false, minHeap.offer(null));
         assertEquals(1, minHeap.size());
     }
-    // 4. Test deletion and priority queue property
+    // 4. Test deletion and priority queue property and repetitive poll calls
     @Test
     public void testRemovingRoot() {
         MinHeapPriorityQueue<Integer> minHeap = new MinHeapPriorityQueue<Integer>();
@@ -59,5 +59,4 @@ public class TestPriorityQueue {
         assertEquals(5, minHeap.poll());
         assertEquals(0, minHeap.size());
     }
-
 }

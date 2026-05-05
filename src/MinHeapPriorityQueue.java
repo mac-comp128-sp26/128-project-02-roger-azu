@@ -91,11 +91,23 @@ public class MinHeapPriorityQueue<E> {
     public int size() {
         return numElements;
     }
+    /**
+     * Helper function. Changes the value of an element at the given index.
+     * It doesn't maintain the min-heap property of priority queue. 
+     * @param obj   new element
+     * @param index index in the array to be modified
+     */
+    public void setValue(E obj, int index) {
+        data[index] = obj;
+    }
+
+    public boolean isEmpty() {
+        return (numElements == 0);
+    }
 
     private void expandCapacity() {
         data = Arrays.copyOf(data, data.length * 2);
     }
-
 
     
 

@@ -1,9 +1,6 @@
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
 
 public class AdjacencyListGraph implements Graph {
-    
+
     private final int V;
     private int E;
     private Bag<Edge>[] adj;
@@ -11,18 +8,19 @@ public class AdjacencyListGraph implements Graph {
 
     // Static nested class to represent a weighted directed edge
     public static class Edge {
-        public final int to;
+        public final int destination;
         public final double weight;
 
-        public Edge(int to, double weight) {
-            this.to = to;
+        public Edge(int destination, double weight) {
+            this.destination = destination;
             this.weight = weight;
-        }
+            }
     }
-
+    
     @SuppressWarnings("unchecked")
     public AdjacencyListGraph(int V) {
-        if (V < 0) throw new IllegalArgumentException("Number of vertices must be nonnegative");
+        if (V < 0)
+            throw new IllegalArgumentException("Number of vertices must be nonnegative");
         this.V = V;
         this.E = 0;
         adj = (Bag<Edge>[]) new Bag[V];
@@ -42,12 +40,17 @@ public class AdjacencyListGraph implements Graph {
         adj[v].add(new Edge(w, weight));
         E++;
     }
+    
 
     @Override
-    public int V() { return V; }
+    public int V() {
+        return V;
+    }
 
     @Override
-    public int E() { return E; }
+    public int E() {
+        return E;
+    }
 
     /**
      * Returns an Iterable of neighbor vertex IDs.
@@ -59,8 +62,8 @@ public class AdjacencyListGraph implements Graph {
     }
 
     /**
-     * Returns the full Edge objects (destination and weight).
-     * Useful for algorithms like Dijkstra's or Bellman-Ford.
+     * Returns the full Edge objects (destination and weight). Useful for algorithms like Dijkstra's or
+     * Bellman-Ford. 
      */
     public Iterable<Edge> adjEdges(int v) {
         validateVertex(v);
@@ -85,8 +88,8 @@ public class AdjacencyListGraph implements Graph {
         for (int v = 0; v < V; v++) {
             s.append(v).append(": ");
             for (Edge e : adj[v]) {
-                s.append(v).append("->").append(e.to)
-                 .append(" (").append(e.weight).append(")  ");
+                s.append(v).append("->").append(e.destination)
+                .append(" (").append(e.weight).append(") ");
             }
             s.append(NEWLINE);
         }

@@ -2,6 +2,8 @@ import edu.macalester.graphics.*;
 import edu.macalester.graphics.ui.Button;
 import edu.macalester.graphics.ui.TextField;
 
+import java.util.HashMap;
+
 public class TransitApp {
 
     private CanvasWindow canvas;
@@ -11,16 +13,25 @@ public class TransitApp {
     private TextField timeField;
 
     private Button searchButton;
+    private Button showStationsButton;
+
     private GraphicsText resultText;
+    private GraphicsText stationMapText;
 
     private AdjacencyListGraph graph;
+    private CSVReader csvReader;
+    private HashMap<Integer, Station> stationMap;
 
     public TransitApp() {
-        canvas = new CanvasWindow("Best Bus Route Finder", 800, 600);
+        canvas = new CanvasWindow("Best Bus Route Finder", 900, 700);
 
-        // TODO: Replace this with real GTFS loading later.
-        // CSVReader.LoadedTransitData data = CSVReader.loadGTFS("res/gtfs");
-        // graph = data.graph;
+        csvReader = new CSVReader();
+        csvReader.loadStopFile("res/gtfs/stops.txt");
+        stationMap = csvReader.getStationMap();
+
+        csvReader = new CSVReader();
+        graph = csvReader.loadGTFS("res/gtfs");
+        stationMap = csvReader.getStationMap();
 
         setupUI();
     }
@@ -55,9 +66,17 @@ public class TransitApp {
         searchButton.onClick(() -> findRoute());
         canvas.add(searchButton, 30, 250);
 
+        showStationsButton = new Button("Print Station IDs");
+        showStationsButton.onClick(() -> showStationIds());
+        canvas.add(showStationsButton, 220, 250);
+
         resultText = new GraphicsText("Enter stations, then click Find Shortest Route.");
         resultText.setFont(FontStyle.PLAIN, 16);
         canvas.add(resultText, 30, 320);
+
+        stationMapText = new GraphicsText("");
+        stationMapText.setFont(FontStyle.PLAIN, 13);
+        canvas.add(stationMapText, 30, 370);
     }
 
     private void findRoute() {
@@ -66,7 +85,12 @@ public class TransitApp {
             int target = Integer.parseInt(destinationField.getText());
 
             if (graph == null) {
-                resultText.setText("Graph is not loaded yet. Connect CSVReader first.");
+                resultText.setText("Graph is not loaded yet. Connect stop_times.txt in CSVReader first.");
+                return;
+            }
+
+            if (!stationMap.containsKey(source) || !stationMap.containsKey(target)) {
+                resultText.setText("One of those station indices does not exist.");
                 return;
             }
 
@@ -78,6 +102,42 @@ public class TransitApp {
         } catch (NumberFormatException e) {
             resultText.setText("Please enter valid integer station indices.");
         }
+    }
+
+    private void showStationIds() {
+    StringBuilder sb = new StringBuilder();
+
+    int maxToShow = 15;
+
+    for (int id = 0; id < stationMap.size() && id < maxToShow; id++) {
+        Station station = stationMap.get(id);
+
+        if (station != null) {
+            sb.append(id)
+              .append(": ")
+              .append(station.name)
+              .append("\n");
+
+            // Full list still goes to terminal
+            System.out.println(id + ": " + station.name);
+        }
+    }
+
+    sb.append("\nShowing first ")
+      .append(maxToShow)
+      .append(" stations.\n");
+    sb.append("Full station list printed in terminal.");
+
+    stationMapText.setText(sb.toString());
+
+    // Print rest to terminal
+    for (int id = maxToShow; id < stationMap.size(); id++) {
+        Station station = stationMap.get(id);
+
+        if (station != null) {
+            System.out.println(id + ": " + station.name);
+        }
+    }
     }
 
     public static void main(String[] args) {

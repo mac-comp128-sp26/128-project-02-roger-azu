@@ -1,4 +1,3 @@
-
 public class AdjacencyListGraph implements Graph {
 
     private final int V;

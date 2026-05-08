@@ -35,7 +35,10 @@ public class TransitApp {
 
         setupUI();
     }
-
+    /**
+     * Helper method. It creates and displays all the visual elements of the user interface. 
+     * Includes buttons, text fields and handles mouse events
+     */
     private void setupUI() {
         GraphicsText title = new GraphicsText("Best Bus Route Finder");
         title.setFont(FontStyle.BOLD, 28);
@@ -78,7 +81,11 @@ public class TransitApp {
         stationMapText.setFont(FontStyle.PLAIN, 13);
         canvas.add(stationMapText, 30, 370);
     }
-
+    /**
+     * Finds and displays the shortest route between two station indices using Dijkstra's algorithm.
+     * Reads the source and destination station IDs from the GUI input fields, validates them, 
+     * and displays the resulting path or an error message in the result text area.
+     */
     private void findRoute() {
         try {
             int source = Integer.parseInt(startField.getText());
@@ -88,56 +95,54 @@ public class TransitApp {
                 resultText.setText("Graph is not loaded yet. Connect stop_times.txt in CSVReader first.");
                 return;
             }
-
             if (!stationMap.containsKey(source) || !stationMap.containsKey(target)) {
                 resultText.setText("One of those station indices does not exist.");
                 return;
             }
-
             DijkstraPathFinder finder = new DijkstraPathFinder(graph, graph.V());
             String result = finder.dijkstra(source, target);
-
             resultText.setText(result);
 
         } catch (NumberFormatException e) {
             resultText.setText("Please enter valid integer station indices.");
         }
     }
-
+    /**
+     * Displays the first 15 station ids along with their name and displays the rest in the terminal.
+     * The user can used this to help enter valid station indices for route finding.
+     */
     private void showStationIds() {
-    StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
+        int maxToShow = 15;
 
-    int maxToShow = 15;
+        for (int id = 0; id < stationMap.size() && id < maxToShow; id++) {
+            Station station = stationMap.get(id);
 
-    for (int id = 0; id < stationMap.size() && id < maxToShow; id++) {
-        Station station = stationMap.get(id);
+            if (station != null) {
+                sb.append(id)
+                    .append(": ")
+                    .append(station.name)
+                    .append("\n");
 
-        if (station != null) {
-            sb.append(id)
-              .append(": ")
-              .append(station.name)
-              .append("\n");
-
-            // Full list still goes to terminal
-            System.out.println(id + ": " + station.name);
+                // Full list still goes to terminal
+                System.out.println(id + ": " + station.name);
+            }
         }
-    }
+        sb.append("\nShowing first ")
+            .append(maxToShow)
+            .append(" stations.\n");
+        sb.append("Full station list printed in terminal.");
 
-    sb.append("\nShowing first ")
-      .append(maxToShow)
-      .append(" stations.\n");
-    sb.append("Full station list printed in terminal.");
+        stationMapText.setText(sb.toString());
 
-    stationMapText.setText(sb.toString());
+        // Print rest to terminal
+        for (int id = maxToShow; id < stationMap.size(); id++) {
+            Station station = stationMap.get(id);
 
-    // Print rest to terminal
-    for (int id = maxToShow; id < stationMap.size(); id++) {
-        Station station = stationMap.get(id);
-
-        if (station != null) {
-            System.out.println(id + ": " + station.name);
+            if (station != null) {
+                System.out.println(id + ": " + station.name);
+            }
         }
-    }
     }
 
     public static void main(String[] args) {

@@ -20,12 +20,40 @@ public class CSVReader {
         stopIdMap = new HashMap<String, Integer>();
         stationMap = new HashMap<Integer, Station>();
     }
+    /**
+     * Represents a single stop entry within a trip from the GTFS stop_times.txt file.
+     * Stores the stop id, arrival and departure times in seconds, and the stop's 
+     * position within the trip sequence. Used internally during graph construction
+     * to compute travel times between consecutive stops.
+     */
+    private static class StopTime {
+        String stopId;
+        int arrivalTime;
+        int departureTime;
+        int sequence;
 
+        StopTime(String stopId, int arrivalTime, int departureTime, int sequence) {
+            this.stopId = stopId;
+            this.arrivalTime = arrivalTime;
+            this.departureTime = departureTime;
+            this.sequence = sequence;
+        }
+    }
+    /**
+     * Allows to load files from a folder and derives the parsing of the files to other helper methods.
+     * @param folderPath    the path of the folder containing the .txt files
+     * @return
+     */
     public AdjacencyListGraph loadGTFS(String folderPath) {
         loadStopFile(folderPath + "/stops.txt");
         return loadStopTimesFile(folderPath + "/stop_times.txt");
     }
-
+    /**
+     * Parses stops.txt and builds the stop index and station maps.
+     * Only valid stops (within Ramsey County) are loaded, filtered by geographic bounding box.
+     * Each valid stop is assigned a unique integer index and stored as a Station object.
+     * @param path
+     */
     public void loadStopFile(String path) {
         int stationIndex = 0;
 
@@ -53,7 +81,6 @@ public class CSVReader {
                     stationIndex++;
                 }
             }
-
             br.close();
             System.out.println("Loaded Ramsey County stops: " + stationIndex);
 
@@ -62,18 +89,22 @@ public class CSVReader {
             e.printStackTrace();
         }
     }
-
+    /**
+     * It parses stops_times.txt file and groups stops by trip.
+     * Builds a graph from those trips and returns it.
+     * @param path  relative file path where stops_times.txt is stored.
+     * @return      a graph of connected stations by a helper method. 
+     */
     public AdjacencyListGraph loadStopTimesFile(String path) {
         HashMap<String, ArrayList<StopTime>> trips = new HashMap<String, ArrayList<StopTime>>();
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(path));
-
             String headerLine = br.readLine();
             String[] headers = parseCSVLine(headerLine);
             HashMap<String, Integer> headerMap = buildHeaderMap(headers);
 
-            String line;
+            String line = "";
 
             while ((line = br.readLine()) != null) {
                 String[] values = parseCSVLine(line);
@@ -93,17 +124,21 @@ public class CSVReader {
 
                 trips.get(tripId).add(new StopTime(stopId, arrivalTime, departureTime, sequence));
             }
-
             br.close();
 
         } catch (IOException e) {
             System.out.println("Problem reading stop_times file: " + path);
             e.printStackTrace();
         }
-
         return buildGraphFromTrips(trips);
     }
-
+    /**
+     * Helper method. Builds a directed weighted graph from trip stop-time data. 
+     * Consecutive stops in each trip become edges whose weights are
+     * the average travel times between stations.
+     * @param trips     a map that links trip_id with its respective list of StopTime objects 
+     * @return          a directed graph of connected stations 
+     */
     private AdjacencyListGraph buildGraphFromTrips(HashMap<String, ArrayList<StopTime>> trips) {
         HashMap<String, ArrayList<Integer>> edgeTimes = new HashMap<String, ArrayList<Integer>>();
 
@@ -113,7 +148,6 @@ public class CSVReader {
                     return Integer.compare(a.sequence, b.sequence);
                 }
             });
-
             for (int i = 0; i < trip.size() - 1; i++) {
                 StopTime current = trip.get(i);
                 StopTime next = trip.get(i + 1);
@@ -121,50 +155,46 @@ public class CSVReader {
                 if (!stopIdMap.containsKey(current.stopId) || !stopIdMap.containsKey(next.stopId)) {
                     continue;
                 }
-
                 int u = stopIdMap.get(current.stopId);
                 int v = stopIdMap.get(next.stopId);
-
                 int travelTime = next.arrivalTime - current.departureTime;
 
                 if (travelTime < 0) {
                     continue;
                 }
-
                 String edgeKey = u + "->" + v;
 
                 if (!edgeTimes.containsKey(edgeKey)) {
                     edgeTimes.put(edgeKey, new ArrayList<Integer>());
                 }
-
                 edgeTimes.get(edgeKey).add(travelTime);
             }
         }
-
         AdjacencyListGraph graph = new AdjacencyListGraph(stationMap.size());
 
         for (String edgeKey : edgeTimes.keySet()) {
             ArrayList<Integer> times = edgeTimes.get(edgeKey);
-
             double total = 0;
+
             for (int time : times) {
                 total += time;
             }
-
             double average = total / times.size();
-
             String[] parts = edgeKey.split("->");
             int u = Integer.parseInt(parts[0]);
             int v = Integer.parseInt(parts[1]);
 
             graph.addEdge(u, v, average);
         }
-
         System.out.println("Built graph with " + graph.V() + " vertices and " + graph.E() + " edges.");
-
         return graph;
     }
-
+    /**
+     * Helper method. Determines whether the given latitude and longitude coordinates lie within Ramsey County.
+     * @param lat   latitude coordinate
+     * @param lon   longitute coordinate
+     * @return      it's true if the input coordinates are within Ramsey County bounding box, otherwise is false.
+     */
     private boolean isWithinRamsey(double lat, double lon) {
         return lat >= RAMSEY_SOUTH_LAT &&
                lat <= RAMSEY_NORTH_LAT &&
@@ -188,7 +218,6 @@ public class CSVReader {
         for (int i = 0; i < headers.length; i++) {
             map.put(headers[i], i);
         }
-
         return map;
     }
 
@@ -211,7 +240,6 @@ public class CSVReader {
         }
 
         values.add(current.toString());
-
         return values.toArray(new String[0]);
     }
 
@@ -221,20 +249,6 @@ public class CSVReader {
 
     public HashMap<Integer, Station> getStationMap() {
         return stationMap;
-    }
-
-    private static class StopTime {
-        String stopId;
-        int arrivalTime;
-        int departureTime;
-        int sequence;
-
-        StopTime(String stopId, int arrivalTime, int departureTime, int sequence) {
-            this.stopId = stopId;
-            this.arrivalTime = arrivalTime;
-            this.departureTime = departureTime;
-            this.sequence = sequence;
-        }
     }
 
     public static void main(String[] args) {

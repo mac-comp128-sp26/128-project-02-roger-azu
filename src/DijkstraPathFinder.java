@@ -10,7 +10,11 @@ public class DijkstraPathFinder {
     private int [] previous;
     private int V; // number of vertices in a given path
 
-
+    /**
+     * Represents a station and its current known shortest distance from the source.
+     * Used as entries in the min heap priority queue during Dijkstra's algorithm.
+     * Natural ordering is defined by distance: closer stations have higher priority.
+     */   
     public static class StationNode implements Comparable<StationNode> {
         public final int stationIndex; // station's index in the graph
         public final double distance; // current known distance from the source
@@ -36,7 +40,10 @@ public class DijkstraPathFinder {
         previous = new int[V];
     }
     /**
-     * 
+     * All station distances are initialized to infinity and updated as each vertex is processed.
+     * A min heap priority queue is used to always process the closest unvisited station first.
+     * For each station, adjacent edges are relaxed: if the distance from the source through the 
+     * current station is shorter than the previously known distance, the estimate is updated.
      * @param source    represents the index of the source in the graph
      * @param target    represents the index of the target destination in the graph
      */
@@ -65,49 +72,47 @@ public class DijkstraPathFinder {
             while (iter.hasNext()) {
                 AdjacencyListGraph.Edge edge = iter.next();
                 int neighbor = edge.destination;
-                double newDistance = dist[v.stationIndex] + edge.weight;
+                double newDistance = dist[v.stationIndex] + edge.weight; 
                 
-                if (newDistance < dist[neighbor]) {
-                    dist[neighbor] = newDistance;
+                if (newDistance < dist[neighbor]) { 
+                    dist[neighbor] = newDistance; // performing relaxation process; a better distance estimate has been found
                     previous[neighbor] = v.stationIndex;
                     distancePQ.offer(new StationNode(neighbor, newDistance));
                 }
         }
         }
         if (dist[target] != Double.MAX_VALUE) {
-            String result = "Distance is: " + dist[target] + " path is: " + reconstructPath(previous, source, target);
+            String result = "Time in seconds is: " + dist[target] + " path is: " + reconstructPath(previous, source, target);
             return result;
         }
         return "Target is unreachable!";
     }
     /**
-     * Helper method.
-     * @param previous
-     * @param source
-     * @param target
-     * @return
+     * Helper method. Reconstructs the shortest path from source to target by backtracking through
+     * the previous array built during Dijkstra's algorithm.
+     * Start at target, then each station's predecessor is pushed onto a stack
+     * until the source is reached. The stack is then popped to produce the path
+     * in the correct source-to-target order.
+     * @param previous  an array of vertices indexes that allows backtracking 
+     * @param source    index of source
+     * @param target    index of target
+     * @return a string that contains the path followed in source-to-target order
      */
-
     private String reconstructPath(int[] previous, int source, int target) {
     Stack<Integer> path = new Stack<Integer>();
     StringBuilder sb = new StringBuilder();
-
     int i = target;
 
     while (i != -1) {
         path.push(i);
-
         if (i == source) {
             break;
         }
-
         i = previous[i];
     }
-
     if (path.peek() != source) {
         return "No path found";
     }
-
     while (!path.isEmpty()) {
         int station = path.pop();
 
@@ -117,7 +122,6 @@ public class DijkstraPathFinder {
             sb.append(station);
         }
     }
-
     return sb.toString();
     }
 }
